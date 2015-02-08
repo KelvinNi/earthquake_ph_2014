@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.29.1"></script>
+    <style type="text/css">
+
+html, body, #map {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.points, .points svg {
+  position: absolute;
+}
+
+.points svg {
+  width: 60px;
+  height: 20px;
+  padding-right: 100px;
+  font: 10px sans-serif;
+}
+
+.points circle {
+  fill: brown;
+  stroke: black;
+  stroke-width: 0px;
+}
+
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script type="text/javascript">
+
+// Create the Google Map…
+var map = new google.maps.Map(d3.select("#map").node(), {
+  zoom: 6,
+  center: new google.maps.LatLng(12.149304, 122.8854261),
+  mapTypeId: google.maps.MapTypeId.TERRAIN
+});
+
+d3.csv("results.csv", function(data) {
+  var overlay = new google.maps.OverlayView();
+
+  overlay.onAdd = function() {
+    var layer = d3.select(this.getPanes().overlayLayer).append("div")
+        .attr("class", "points");
+
+    overlay.draw = function() {
+      var projection = this.getProjection(),
+          padding = 10;
+
+      var marker = layer.selectAll("svg")
+          .data(d3.entries(data))
+          .each(transform) // update existing markers
+        .enter().append("svg:svg")
+          .each(transform)
+          .attr("class", "marker");
+
+      marker.append("svg:circle")
+          .attr("cx", padding)
+          .attr("cy", padding)
+          .each(magnitude);
+
+      function transform(d) {
+        d = new google.maps.LatLng(+d.value['Latitude'], +d.value['Longitude']);
+        d = projection.fromLatLngToDivPixel(d);
+
+        return d3.select(this)
+          .style("left", (d.x - padding) + "px")
+          .style("top", (d.y - padding) + "px");
+      }
+
+      function magnitude(d) {
+        d3.select(this).attr("r", d.value['Magnitude'] * 1.5)
+        d3.select(this).attr("opacity", 0.5)
+        // d3.select(this).attr("fill", "yellow")
+      }
+    }
+  }
+
+  overlay.setMap(map);
+});
+    </script>
+  </body>
+</html>
